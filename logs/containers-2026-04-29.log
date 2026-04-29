@@ -1,0 +1,19 @@
+attendance_backend: Up 2 hours | backend-aea-backend
+attendance_mongodb: Up 2 hours | mongo:8.0
+diabetes-api: Up 2 hours | diabetes-patient-api
+diabetes-frontend: Up 2 hours | diabetes-patient-frontend
+diabetes-mongo-express: Up 2 hours | mongo-express:latest
+diabetes-mongodb: Up 2 hours | mongo:7
+nginx-proxy-manager-app-1: Up 12 minutes | jc21/nginx-proxy-manager:latest
+policy-policy-1: Up 2 hours | node:22-alpine
+portainer: Up 29 minutes | portainer/portainer-ce:lts
+rentroom-backend: Up 2 hours | rentroom-backend
+rentroom-frontend: Up 2 hours | rentroom-frontend
+rentroom-mongodb: Up 2 hours | mongo:7
+sjb-attendant-backend-1: Up 26 hours | node:20-alpine
+sjb-attendant-frontend-1: Up 33 hours | node:20-alpine
+svsn_backend: Up 2 hours (healthy) | svlosgistics-backend
+svsn_frontend: Up 2 hours | svlosgistics-frontend
+svsn_mongodb: Up 2 hours | mongo:7
+vanta_api-app-1: Up 28 hours | vanta_api-app
+vanta_api-mongo-1: Up 2 days | mongo:7

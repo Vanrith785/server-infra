@@ -1,0 +1,50 @@
+- /data/nginx/proxy_host/39.conf
+- /data/nginx/proxy_host/35.conf
+- /data/nginx/proxy_host/33.conf
+- /data/nginx/proxy_host/26.conf
+- /data/nginx/proxy_host/45.conf
+- /data/nginx/proxy_host/34.conf
+- /data/nginx/proxy_host/48.conf
+- /data/nginx/proxy_host/36.conf
+- /data/nginx/proxy_host/42.conf
+- /data/nginx/proxy_host/28.conf
+- /data/nginx/proxy_host/27.conf
+- /data/nginx/proxy_host/37.conf
+- /data/nginx/proxy_host/40.conf
+- /data/nginx/proxy_host/47.conf
+- /data/nginx/proxy_host/46.conf
+- /data/nginx/proxy_host/31.conf
+- /data/nginx/proxy_host/25.conf
+- /data/nginx/proxy_host/49.conf
+- /data/nginx/proxy_host/24.conf
+- /data/nginx/proxy_host/43.conf
+- /data/nginx/proxy_host/44.conf
+[1;34m❯ [1;36mDocker secrets ...[0m
+
+-------------------------------------
+ _   _ ____  __  __
+| \ | |  _ \|  \/  |
+|  \| | |_) | |\/| |
+| |\  |  __/| |  | |
+|_| \_|_|   |_|  |_|
+-------------------------------------
+User:  npm PUID:0 ID:0 GROUP:0
+Group: npm PGID:0 ID:0
+-------------------------------------
+
+[1;34m❯ [1;36mStarting nginx ...[0m
+[1;34m❯ [1;36mStarting backend ...[0m
+[4/30/2026] [1:23:42 AM] [Global   ] › ℹ  info      Using Sqlite: /data/database.sqlite
+[4/30/2026] [1:23:42 AM] [Migrate  ] › ℹ  info      Current database version: none
+[4/30/2026] [1:23:42 AM] [Setup    ] › ℹ  info      Logrotate Timer initialized
+[4/30/2026] [1:23:42 AM] [Setup    ] › ℹ  info      Logrotate completed.
+[4/30/2026] [1:23:42 AM] [Global   ] › ℹ  info      IP Ranges fetch is enabled
+[4/30/2026] [1:23:42 AM] [IP Ranges] › ℹ  info      Fetching IP Ranges from online services...
+[4/30/2026] [1:23:42 AM] [IP Ranges] › ℹ  info      Fetching https://ip-ranges.amazonaws.com/ip-ranges.json
+[4/30/2026] [1:23:42 AM] [IP Ranges] › ℹ  info      Fetching https://www.cloudflare.com/ips-v4
+[4/30/2026] [1:23:42 AM] [IP Ranges] › ℹ  info      Fetching https://www.cloudflare.com/ips-v6
+[4/30/2026] [1:23:43 AM] [SSL      ] › ℹ  info      Let's Encrypt Renewal Timer initialized
+[4/30/2026] [1:23:43 AM] [SSL      ] › ℹ  info      Renewing SSL certs expiring within 30 days ...
+[4/30/2026] [1:23:43 AM] [IP Ranges] › ℹ  info      IP Ranges Renewal Timer initialized
+[4/30/2026] [1:23:43 AM] [Global   ] › ℹ  info      Backend PID 194 listening on port 3000 ...
+[4/30/2026] [1:23:43 AM] [SSL      ] › ℹ  info      Completed SSL cert renew process

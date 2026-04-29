@@ -11,8 +11,8 @@ credentials*
 npm-data/
 npm-letsencrypt/
 backups/
-logs/
 
-# Logs — keep session summaries and smoke tests, exclude operational logs
+
+# Operational logs (keep session summaries)
 logs/npm.log
 logs/backup.log
