@@ -1,0 +1,79 @@
+networks:
+  production:
+    external: true
+    name: production
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: diabetes-api
+    depends_on:
+    - mongo
+    environment:
+      API_BASE_URL: https://diabetes-api.svsnlosgistics.shop
+      APP_BASE_URL: https://diabetes.svsnlosgistics.shop
+      FRONTEND_ORIGIN: https://diabetes.svsnlosgistics.shop
+      JWT_EXPIRES_IN: 1h
+      JWT_REFRESH_EXPIRES_IN: 7d
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_SECRET: ${JWT_SECRET}
+      MONGODB_URI: mongodb://mongo:27017/diabetes-tracker
+      NODE_ENV: production
+      PORT: 5000
+    networks:
+    - production
+    ports:
+    - 5000:5000
+    restart: unless-stopped
+    volumes:
+    - ./backend:/app
+    - /app/node_modules
+  frontend:
+    build:
+      args:
+        VITE_API_BASE_URL: https://diabetes-api.svsnlosgistics.shop
+        VITE_APP_BASE_URL: https://diabetes.svsnlosgistics.shop
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: diabetes-frontend
+    depends_on:
+    - api
+    environment:
+      VITE_API_BASE_URL: https://diabetes-api.svsnlosgistics.shop
+      VITE_APP_BASE_URL: https://diabetes.svsnlosgistics.shop
+    networks:
+    - production
+    ports:
+    - 3002:80
+    restart: unless-stopped
+  mongo:
+    container_name: diabetes-mongodb
+    environment:
+      MONGO_INITDB_DATABASE: diabetes-tracker
+    image: mongo:7
+    networks:
+    - production
+    ports:
+    - 27021:27017
+    restart: unless-stopped
+    volumes:
+    - mongodb_data:/data/db
+  mongo-express:
+    container_name: diabetes-mongo-express
+    depends_on:
+    - mongo
+    environment:
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD:-changeme}
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017/
+    image: mongo-express:latest
+    networks:
+    - production
+    ports:
+    - 8081:8081
+    restart: unless-stopped
+version: '3.8'
+volumes:
+  mongodb_data:
+    driver: local

@@ -1,0 +1,33 @@
+services:
+  backend:
+    image: node:20-alpine
+    working_dir: /app/backend
+    command: node server.js
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3030
+      AUTH_SECRET: dev-secret-change-me
+    volumes:
+      - ./backend:/app/backend
+    ports:
+      - "3030:3030"
+    restart: unless-stopped
+
+  frontend:
+    image: node:20-alpine
+    working_dir: /app/frontend
+    environment:
+      VITE_BACKEND_URL: http://backend:3030
+      CHOKIDAR_USEPOLLING: "true"
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    volumes:
+      - ./frontend:/app/frontend
+      - frontend_node_modules:/app/frontend/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  frontend_node_modules:

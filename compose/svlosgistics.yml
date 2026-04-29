@@ -1,0 +1,87 @@
+networks:
+  production:
+    external: true
+    name: production
+  svsn_network:
+    driver: bridge
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: svsn_backend
+    depends_on:
+    - mongodb
+    environment:
+      EXPOSE_DEV_VERIFICATION_CODE: ${EXPOSE_DEV_VERIFICATION_CODE:-false}
+      FRONTEND_URL: https://svsnlosgistics.shop
+      JWT_EXPIRE: 7d
+      JWT_SECRET: ${JWT_SECRET}
+      MONGODB_AUTH_SOURCE: admin
+      MONGODB_DB: svsn_logistics
+      MONGODB_HOST: mongodb
+      MONGODB_PORT: 27017
+      MONGO_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-changeme123}
+      MONGO_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      NODE_ENV: production
+      PORT: 7005
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+    healthcheck:
+      interval: 30s
+      retries: 3
+      test:
+      - CMD
+      - wget
+      - --no-verbose
+      - --tries=1
+      - --spider
+      - http://localhost:7005/
+      timeout: 10s
+    networks:
+    - svsn_network
+    - production
+    ports:
+    - 7005:7005
+    restart: unless-stopped
+  frontend:
+    build:
+      args:
+        VITE_API_URL: https://svsnlosgistics.shop/api
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: svsn_frontend
+    depends_on:
+    - backend
+    environment:
+      VITE_API_URL: https://svsnlosgistics.shop/api
+    networks:
+    - svsn_network
+    - production
+    ports:
+    - 3000:80
+    restart: unless-stopped
+  mongodb:
+    container_name: svsn_mongodb
+    environment:
+      MONGO_INITDB_DATABASE: svsn_logistics
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-changeme123}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+    image: mongo:7
+    networks:
+    - svsn_network
+    - production
+    ports:
+    - 27017:27017
+    restart: unless-stopped
+    volumes:
+    - mongodb_data:/data/db
+    - ./mongo-init.js:/docker-entrypoint-initdb.d:ro
+version: '3.8'
+volumes:
+  mongodb_data:
+    driver: local

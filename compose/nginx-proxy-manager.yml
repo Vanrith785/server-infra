@@ -1,0 +1,36 @@
+services:
+  app:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: nginx-proxy-manager-app-1
+    restart: always
+    ports:
+      - '80:80'
+      - '81:81'
+      - '443:443'
+    environment:
+      TZ: "Australia/Brisbane"
+    volumes:
+      - /root/npm-data:/data
+      - /root/npm-letsencrypt:/etc/letsencrypt
+    networks:
+      - nginx-proxy-manager_default
+      - sjb-attendant_default
+      - vanta_api_default
+      - production
+      - root_default
+
+networks:
+  nginx-proxy-manager_default:
+    name: nginx-proxy-manager_default
+  sjb-attendant_default:
+    name: sjb-attendant_default
+    external: true
+  vanta_api_default:
+    name: vanta_api_default
+    external: true
+  production:
+    name: production
+    external: true
+  root_default:
+    name: root_default
+    external: true

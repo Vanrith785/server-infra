@@ -1,0 +1,25 @@
+services:
+  app:
+    build: .
+    ports:
+      - "5051:5051"
+    env_file:
+      - .env
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/vantapass
+    depends_on:
+      - mongo
+    volumes:
+      - ./uploads:/app/uploads
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27023:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+volumes:
+  mongo_data:

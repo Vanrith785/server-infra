@@ -1,0 +1,14 @@
+# Never commit secrets or data
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.archive
+credentials*
+*.pem
+*.key
+*.env
+.env*
+npm-data/
+npm-letsencrypt/
+backups/
+logs/
