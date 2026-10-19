@@ -444,6 +444,138 @@ sv-db, rentroom-db, aea-db, diabetes-db, tavan-db are proxied without
 proxy-level authentication. Access relies solely on MongoDB's own auth.
 Add NPM Access Lists (IP whitelist) to these routes.
 
+### 7. Driver picker HTTP 522 — stale Docker forwarding bridges
+
+**Incident:** 2026-10-19. The app's **Select Driver** screen displayed a
+Dio HTTP 522 exception. Working client login did not establish that the
+driver request path was reachable.
+
+**Confirmed cause:** Cloudflare connections reached `194.163.155.11:443`,
+but incoming TCP SYNs received no reply. Docker's `DOCKER-BRIDGE` and
+`DOCKER-CT` rules referenced obsolete bridges and omitted the live Nginx
+bridge, `br-d824a91a2901`. New inbound connections consequently fell through
+to the `FORWARD DROP` policy. The existing bridge recovery script restored
+container-originated and established traffic, but not new inbound web
+connections. This was an origin networking failure, not a demonstrated
+slow database query or a Dio `validateStatus` problem.
+
+#### Diagnose before changing rules
+
+Compare the backend, direct Nginx HTTPS, and public Cloudflare path:
+
+```bash
+curl -sS --max-time 15 -o /dev/null \
+  -w 'backend: %{http_code} %{time_total}s\n' \
+  http://127.0.0.1:5051/health
+curl -sS --max-time 15 -o /dev/null \
+  --resolve tavan-api.svsnlosgistics.shop:443:127.0.0.1 \
+  -w 'direct nginx: %{http_code} %{time_total}s\n' \
+  https://tavan-api.svsnlosgistics.shop/health
+curl -sS --max-time 25 -o /dev/null \
+  -w 'public: %{http_code} %{time_total}s\n' \
+  https://tavan-api.svsnlosgistics.shop/health
+
+docker network inspect nginx-proxy-manager_default \
+  --format '{{.Id}} {{index .Options "com.docker.network.bridge.name"}}'
+ip -brief link
+iptables -S FORWARD
+iptables -S DOCKER-BRIDGE
+iptables -S DOCKER-CT
+iptables -S DOCKER-USER
+iptables -S DOCKER
+iptables -t nat -S DOCKER
+```
+
+During this incident, the first two checks returned 200 immediately, but
+the public check returned 522 after about 20 seconds; the main site also
+returned 522. An HTTP 522 generated before reaching Nginx will not appear
+as a backend request. Inspect `/root/npm-data/logs/proxy-host-44_error.log`
+and `docker logs vanta_api-app-1` locally; redact query strings, tokens,
+phone numbers, and other personal data before sharing logs.
+
+#### Resolution and persistence
+
+Updated `/usr/local/sbin/docker-bridge-forward-rules.sh` to add this
+idempotent rule for each existing Docker bridge:
+
+```bash
+iptables -I DOCKER-USER 1 -o "$bridge" -p tcp \
+  -m multiport --dports 80,443 \
+  -m conntrack --ctstate DNAT -j DOCKER
+```
+
+The script checks with `iptables -C` before inserting. It routes only
+DNATed HTTP/HTTPS traffic through Docker's existing destination rules;
+it does not change the default forwarding policy, flush rules, or add
+database/management-port access. Verify Docker's NAT and destination
+rules still point to the current proxy before reapplying this recovery.
+
+The enabled `docker-bridge-forward-rules.service` runs the script after
+`docker.service` on boot. Reapply manually after bridge changes if the
+same diagnosed condition recurs:
+
+```bash
+bash -n /usr/local/sbin/docker-bridge-forward-rules.sh &&
+  /usr/local/sbin/docker-bridge-forward-rules.sh
+systemctl is-enabled docker-bridge-forward-rules.service
+```
+
+No application/container restart or application code change was required.
+Rollback copies of the original script and IPv4 rules are in
+`/root/docker-web-ingress-backup.3bqUbE/`. If rollback is required, restore
+the original script and delete only the added web-ingress rules using
+their exact specifications (`iptables -D` with the same match arguments
+as above). Compare against the saved rules first. Do not flush the
+firewall or blindly restore a full snapshot over later Docker changes;
+removing these rules can reintroduce the outage.
+
+#### Verification results
+
+- Public API `/health`: changed from 522 to 200; repeat follow-up requests
+  returned 200 in 64–100 ms. Public HTTP redirected with 301, and the main
+  site and driver download page returned 200.
+- Recent proxy logs showed successful authenticated requests: one
+  `GET /admin/drivers`, 16 `GET /drivers/me`, 123
+  `GET /drivers/me/dashboard`, and 40 `GET /drivers/me/orders` in the
+  3,000-line follow-up sample. These are observed service requests, not a
+  controlled mobile UI test.
+- Unauthenticated probes of `/admin/drivers/options`, `/drivers/me`, and
+  `/drivers/me/dashboard` returned 401 promptly, as expected. A 401 proves
+  reachability, not authenticated list success.
+- Three isolated integration tests in
+  `Vanta_api/tests/admin_driver_endpoints.test.js` passed: normalized
+  vehicle-type filtering, driver-code/profile conflict filtering, and
+  lightweight driver options with name/code search, limits, response
+  fields, and invalid-limit validation. Tests used `MongoMemoryServer`,
+  not production MongoDB; a 60-second Jest timeout was needed for initial
+  database startup. The options implementation also supports phone search,
+  but that case was not covered by the selected existing test.
+- A separate existing test, `includes today online presence data in the
+  admin drivers list`, failed at line 1129: expected 45 minutes, received
+  26. Its relative two-hour-old fixture crossed UTC midnight while the
+  request explicitly used `tzOffsetMinutes: 0`. This time-sensitive test
+  failure is not evidence of a 522 regression and was not modified.
+- `bash -n` passed for the recovery script. A second invocation returned
+  zero and left `DOCKER-USER` unchanged (no duplicate rules).
+
+#### Mobile acceptance test — pending
+
+No driver APK/source or connected device was available on this host;
+Android emulator acceleration was unavailable. The mobile screen's exact
+request URL has therefore not been confirmed from the app. The backend
+provides the searchable, admin-authorized `GET /admin/drivers/options`
+endpoint, but do not assume it is the screen's endpoint without inspecting
+the actual request.
+
+On the affected phone, reopen **Select Driver**, tap **Retry**, and confirm
+that the list loads without the raw Dio exception. Search separately by a
+known driver's name, code, and phone; confirm the correct result and an
+empty state for a non-match. Refresh and verify selection using a test
+workflow without submitting a real booking. Record app version, platform,
+test time/timezone, and sanitized request path/status, and correlate with
+proxy logs. Keep mobile end-to-end verification marked pending until
+these steps are completed.
+
 ---
 
 ## Security Recommendations
